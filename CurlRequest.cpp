@@ -4,6 +4,7 @@
 
 #include "CurlRequest.h"
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 CurlGlobalSetup::CurlGlobalSetup() {
@@ -31,14 +32,13 @@ void CurlRequest::set_timeout(int timeout_secs) {
 std::stringstream CurlRequest::execute() {
    std::stringstream responseData;
 
-   curl_easy_setopt(ptr.get(), CURLOPT_WRITEDATA, &responseData);
-
-   auto writeToString = [](char* contents, size_t size, size_t nmemb, void* userdata) -> size_t {
+   auto writeToString = +[](char* contents, size_t size, size_t nmemb, void* userdata) -> size_t {
       auto& responseData = *reinterpret_cast<std::stringstream*>(userdata);
       responseData << std::string_view(contents, size * nmemb);
       return size * nmemb;
    };
 
+   curl_easy_setopt(ptr.get(), CURLOPT_WRITEDATA, &responseData);
    curl_easy_setopt(ptr.get(), CURLOPT_WRITEFUNCTION, writeToString);
 
    if (auto res = curl_easy_perform(ptr.get()); res != CURLE_OK)

@@ -48,10 +48,10 @@ class ProtocolEvent {
    public:
    ProtocolEvent() : kind(ProtocolEventKind::HEARTBEAT), result{}, work{} {}
    ProtocolEvent(std::string work) : kind(ProtocolEventKind::WORK), result{}, work(work) {}
-   ProtocolEvent(unsigned int result) : kind(ProtocolEventKind::RESULT), result(result), work{} {}
+   ProtocolEvent(std::size_t result) : kind(ProtocolEventKind::RESULT), result(result), work{} {}
 
    ProtocolEventKind kind;
-   unsigned int result;
+   std::size_t result;
    std::string work;
 
    std::vector<char> marshal() const;

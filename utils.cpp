@@ -142,9 +142,18 @@ std::optional<std::vector<char>> read_from_socket(int socket_fd) {
    char buffer[512];
    std::vector<char> message{};
 
-   if (auto recv_ret = recv(socket_fd, buffer, sizeof(buffer), 0); recv_ret > 0) {
-      std::copy(buffer, buffer + recv_ret, std::back_inserter(message));
-      return {message};
+   while (true) {
+      auto recv_ret = recv(socket_fd, buffer, sizeof(buffer), 0);
+      if (recv_ret == sizeof(buffer)) {
+         std::copy(buffer, buffer + recv_ret, std::back_inserter(message));
+      } else if (recv_ret > 0 && recv_ret < static_cast<ssize_t>(sizeof(buffer))) {
+         std::copy(buffer, buffer + recv_ret, std::back_inserter(message));
+         return message;
+      } else if (recv_ret <= 0) {
+         return {};
+      } else {
+         throw std::runtime_error("recv_ret < 0 and" + std::string(std::strerror(errno)));
+      }
    }
 
    return {};
@@ -185,14 +194,12 @@ std::optional<ProtocolEvent> unmarshal_proto(std::vector<char> raw_data) {
    }
 
    if (prefix == "R:") {
-      int result;
-      try {
-         result = std::stoi(rest);
-      } catch (...) {
-         return {};
+      std::size_t result;
+      if (std::sscanf(rest.c_str(), "%zu", &result)) {
+         return {ProtocolEvent(result)};
       }
 
-      return {ProtocolEvent(result)};
+      return {};
    }
 
    if (prefix == "H:") {

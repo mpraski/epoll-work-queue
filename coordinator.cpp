@@ -58,11 +58,11 @@ Server Coordinator::create_server() {
                      return WorkerAction();
                   }
                   case utils::ProtocolEventKind::RESULT: {
-                     // increment the counter
+                     // Increment the counter
                      aggregate += static_cast<unsigned int>(proto->result);
-                     // remove this work item successfully
+                     // Remove this work item successfully
                      finish_work(event.worker_id);
-                     // if all work has finished, exit
+                     // If all work has finished, exit
                      if (work_finished()) {
                         return WorkerAction(WorkerActionKind::EXIT);
                      }

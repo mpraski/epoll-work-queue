@@ -15,6 +15,7 @@ using namespace std;
 #include <string>
 #include <string_view>
 #include <thread>
+#include <unordered_set>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
@@ -26,7 +27,7 @@ using namespace std;
 #include <sys/types.h>
 #include <unistd.h>
 
-auto fetchUrlList(string fileLink) {
+auto fetch_url_list(std::string fileLink) {
    CurlRequest curl{curl_easy_init()};
    curl.set_url(fileLink);
    curl.set_timeout(30);
@@ -34,29 +35,22 @@ auto fetchUrlList(string fileLink) {
    return curl.execute();
 }
 
-auto countStringOccurences(std::stringstream fileList) {
-   unsigned int result = 0;
-   for (std::string row; getline(fileList, row, '\n');) {
-      auto rowStream = std::stringstream(std::move(row));
+auto count_unique_domains(std::stringstream fileList) {
+   std::unordered_set<std::string> domains_seen{};
 
-      // Check the URL in the second column
-      unsigned columnIndex = 0;
-      for (std::string column; getline(rowStream, column, '\t'); ++columnIndex) {
-         // column 0 is id, 1 is URL
-         if (columnIndex == 1) {
-            // Check if URL is "google.ru"
-            auto pos = column.find("://"sv);
-            if (pos != string::npos) {
-               auto afterProtocol = std::string_view(column).substr(pos + 3);
-               if (afterProtocol.starts_with("google.ru/"))
-                  ++result;
-            }
-            break;
+   for (std::string row; getline(fileList, row, '\n');) {
+      if (auto pos = row.find_first_of(","); pos != std::string::npos) {
+         auto url = std::string_view(row).substr(0, pos);
+
+         if (auto pos = url.find_first_of("/"); pos != std::string::npos) {
+            domains_seen.emplace(url.substr(0, pos));
+         } else {
+            domains_seen.emplace(url);
          }
       }
    }
 
-   return result;
+   return domains_seen.size();
 }
 
 /// Client process that receives a list of URLs and reports the result
@@ -118,7 +112,7 @@ int main(int argc, char* argv[]) {
    // Create a thread that sends a heartbeat every N seconds
    std::thread heartbeatThread([&] {
       while (running) {
-         this_thread::sleep_for(1s);
+         std::this_thread::sleep_for(1s);
 
          auto response{utils::ProtocolEvent().marshal()};
          std::unique_lock<std::mutex> lock(sockMutex);
@@ -155,7 +149,7 @@ int main(int argc, char* argv[]) {
                if (auto received{utils::read_from_socket(sockfd)}; received.has_value()) {
                   if (auto proto{utils::unmarshal_proto(*received)}; proto.has_value()) {
                      if (proto->kind == utils::ProtocolEventKind::WORK) {
-                        auto count{countStringOccurences(fetchUrlList(proto->work))};
+                        auto count{count_unique_domains(fetch_url_list(proto->work))};
                         auto response{utils::ProtocolEvent(count).marshal()};
 
                         std::unique_lock<std::mutex> lock(sockMutex);
