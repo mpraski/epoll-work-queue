@@ -5,6 +5,7 @@
 #ifndef EPOLL_WORK_QUEUE_CURL_REQUEST_H
 #define EPOLL_WORK_QUEUE_CURL_REQUEST_H
 
+#include <memory>
 #include <string>
 #include <curl/curl.h>
 
@@ -19,7 +20,7 @@ class CurlGlobalSetup {
 
 class CurlRequest {
    public:
-   CurlRequest();
+   CurlRequest(CURL* handle);
 
    void set_url(const std::string& url);
    void set_timeout(int timeout_secs);

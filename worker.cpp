@@ -27,9 +27,11 @@ using namespace std;
 #include <unistd.h>
 
 auto fetchUrlList(string fileLink) {
-   auto curl = CurlRequest::easyInit();
-   curl.setUrl(fileLink);
-   return curl.performToStringStream();
+   CurlRequest curl{curl_easy_init()};
+   curl.set_url(fileLink);
+   curl.set_timeout(30);
+
+   return curl.execute();
 }
 
 auto countStringOccurences(std::stringstream fileList) {

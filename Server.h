@@ -33,7 +33,7 @@ class Server {
    bool run();
    // Marks the server as ready for run()
    void start(std::string port);
-   // Let's the server exit the run() loop
+   // Lets the server exit the run() loop
    void stop();
 
    private:

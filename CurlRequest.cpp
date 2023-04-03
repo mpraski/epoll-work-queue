@@ -14,8 +14,7 @@ CurlGlobalSetup::~CurlGlobalSetup() {
    curl_global_cleanup();
 }
 
-CurlRequest::CurlRequest() {
-   ptr = std::unique_ptr<CURL, decltype(&curl_easy_cleanup)>(curl_easy_init(), curl_easy_cleanup);
+CurlRequest::CurlRequest(CURL* handle) : ptr{handle, curl_easy_cleanup} {
    if (!ptr) {
       throw std::runtime_error("failed to initialize curl");
    }

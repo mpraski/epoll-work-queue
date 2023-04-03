@@ -23,7 +23,7 @@ Coordinator::Coordinator(std::string file_location, std::string port)
    // Split the work into small chunks and fill the open_work vector with it
    CurlGlobalSetup globalCurl{};
 
-   CurlRequest curl{};
+   CurlRequest curl{curl_easy_init()};
    curl.set_url(file_location);
    curl.set_timeout(30);
 
